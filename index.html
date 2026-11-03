@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>신나는 반중력 마트 - 물건 사기 & 동전 계산 놀이</title>
+  <!-- 반중력 동전 스타일 불러오기 -->
+  <link rel="stylesheet" href="css/antigravity.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+      --card-bg: rgba(255, 255, 255, 0.96);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      color: #1e293b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* 우주 배경 반중력 파티클 */
+    .space-stars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-image: 
+        radial-gradient(2px 2px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 90px 140px, #e0e7ff, rgba(0,0,0,0)),
+        radial-gradient(1.5px 1.5px at 150px 70px, #c7d2fe, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 240px 220px, #ffffff, rgba(0,0,0,0));
+      background-size: 320px 320px;
+      opacity: 0.55;
+      z-index: 0;
+    }
+
+    header {
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 24px;
+      z-index: 1;
+    }
+
+    header h1 {
+      font-family: 'Jua', sans-serif;
+      font-size: 2.3rem;
+      letter-spacing: 1px;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    header p {
+      font-size: 1.05rem;
+      color: #c7d2fe;
+      margin-top: 6px;
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 24px;
+      z-index: 1;
+    }
+
+    @media (max-width: 900px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+      padding: 24px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .panel-title {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.45rem;
+      color: #312e81;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px dashed #e2e8f0;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+
+    /* 상품 진열대 */
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 14px;
+    }
+
+    .item-card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 16px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .item-card:hover {
+      transform: translateY(-5px);
+      border-color: #6366f1;
+      box-shadow: 0 10px 20px rgba(99, 102, 241, 0.18);
+    }
+
+    .item-card.selected {
+      border-color: #4f46e5;
+      background: #eef2ff;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+    }
+
+    .item-icon {
+      font-size: 2.8rem;
+      margin-bottom: 8px;
+      transition: transform 0.2s;
+    }
+
+    .item-card:hover .item-icon {
+      transform: scale(1.15) rotate(5deg);
+    }
+
+    .item-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+
+    .item-price {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.15rem;
+      color: #dc2626;
+      background: #fee2e2;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* 반중력 부유 동전 패널 */
+    .floating-wallet-panel {
+      background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
+      border-radius: 20px;
+      color: #ffffff;
+      padding: 24px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .floating-wallet-panel .panel-title {
+      color: #e0e7ff;
+      border-bottom-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* 동전 앞/뒷면 토글 스위치 */
+    .face-toggle-box {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      color: #c7d2fe;
+    }
+
+    .face-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .face-btn.active {
+      background: #6366f1;
+      border-color: #818cf8;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    }
+
+    /* 500원과 100원만 배치되는 널찍한 부유 쉘프 */
+    .coin-shelf {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 30px 20px;
+      min-height: 230px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .coin-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .coin-label {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.1rem;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 4px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* 계산대 영역 */
+    .checkout-board {
+      margin-top: 20px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px;
+      color: #1e293b;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .price-value {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.45rem;
+    }
+
+    .target-val { color: #2563eb; }
+    .paid-val { color: #059669; }
+    .remain-val { color: #dc2626; }
+
+    /* 넣은 동전들 표시 트레이 */
+    .inserted-coins-tray {
+      min-height: 90px;
+      background: #f1f5f9;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .mini-coin {
+      transform: scale(0.68);
+      margin: -12px;
+      cursor: pointer;
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      100% { transform: scale(0.68); opacity: 1; }
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.15rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-reset {
+      background: #e2e8f0;
+      color: #475569;
+    }
+
+    .btn-reset:hover {
+      background: #cbd5e1;
+    }
+
+    .btn-speak {
+      background: #6366f1;
+      color: #ffffff;
+    }
+
+    .btn-speak:hover {
+      background: #4f46e5;
+    }
+
+    .success-banner {
+      display: none;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 14px;
+      text-align: center;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.3rem;
+      animation: bounce 0.6s ease;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="space-stars"></div>
+
+  <header>
+    <h1>🚀 신나는 반중력 마트 (물건 사기 체험)</h1>
+    <p>한국 100원과 500원 동전으로 물건 값을 딱 맞게 지불해보세요!</p>
+  </header>
+
+  <main class="main-container">
+    <!-- 왼쪽: 상품 진열대 (100원/500원으로 계산 가능한 품목) -->
+    <section class="panel">
+      <div class="panel-title">
+        <span>🛒 진열된 상품 고르기</span>
+        <span style="font-size: 0.95rem; color: #64748b; font-family: 'Noto Sans KR';">원하는 상품을 클릭하세요</span>
+      </div>
+
+      <div class="market-grid" id="itemsGrid">
+        <!-- JS로 동적 생성 -->
+      </div>
+    </section>
+
+    <!-- 오른쪽: 반중력 부유 동전 (500원 & 100원) -->
+    <section class="floating-wallet-panel">
+      <div class="panel-title">
+        <span>🪙 반중력 지갑 (동전 클릭)</span>
+        <span style="font-size: 0.85rem; color: #a5b4fc;">클릭하면 계산대에 쏙!</span>
+      </div>
+
+      <!-- 앞면/뒷면 전환 버튼 -->
+      <div class="face-toggle-box">
+        <span>도안 선택:</span>
+        <button class="face-btn active" id="btnBackFace" onclick="setCoinFace(false)">숫자면 (뒷면)</button>
+        <button class="face-btn" id="btnFrontFace" onclick="setCoinFace(true)">도안면 (앞면: 학/이순신)</button>
+      </div>
+
+      <!-- 반중력 부유 동전 진열대: 500원(120px)과 100원(80px)만 배치 -->
+      <div class="coin-shelf">
+        <!-- 500원 동전 -->
+        <div class="coin-slot">
+          <div id="coin500Element" class="coin-graphic coin-500 antigravity-float coin-interactive" onclick="insertCoin(500)" title="500원 넣기"></div>
+          <span class="coin-label">500원</span>
+        </div>
+
+        <!-- 100원 동전 -->
+        <div class="coin-slot">
+          <div id="coin100Element" class="coin-graphic coin-100 antigravity-float antigravity-float-delay-1 coin-interactive" onclick="insertCoin(100)" title="100원 넣기"></div>
+          <span class="coin-label">100원</span>
+        </div>
+      </div>
+
+      <!-- 계산대 영수증 보드 -->
+      <div class="checkout-board">
+        <div class="price-row">
+          <span>선택한 상품:</span>
+          <span id="selectedItemName" style="color: #4f46e5;">(상품을 골라주세요)</span>
+        </div>
+        <div class="price-row">
+          <span>상품 가격:</span>
+          <span class="price-value target-val" id="targetPrice">0원</span>
+        </div>
+        <div class="price-row">
+          <span>현재 넣은 금액:</span>
+          <span class="price-value paid-val" id="paidPrice">0원</span>
+        </div>
+        <div class="price-row" style="border-top: 1px solid #e2e8f0; padding-top: 8px;">
+          <span>남은 금액:</span>
+          <span class="price-value remain-val" id="remainPrice">0원</span>
+        </div>
+
+        <!-- 넣은 동전 트레이 -->
+        <div style="font-size: 0.9rem; font-weight: bold; color: #64748b; margin-top: 10px;">
+          내가 넣은 동전 (클릭하면 취소):
+        </div>
+        <div class="inserted-coins-tray" id="coinsTray">
+          <span style="color: #94a3b8; font-size: 0.9rem;">동전을 클릭하면 여기에 담깁니다.</span>
+        </div>
+
+        <!-- 성공 배너 -->
+        <div class="success-banner" id="successBanner">
+          🎉 짝짝짝! 계산을 완료했습니다! 물건을 구매했어요!
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-speak" onclick="speakStatus()">🔊 음성으로 듣기</button>
+          <button class="btn btn-reset" onclick="resetPayment()">🔄 다시 계산하기</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // 900원 이하 상품 목록 (100원 단위 단계별 구성)
+    const products = [
+      { id: 1, name: '막대 사탕', price: 100, icon: '🍭' },
+      { id: 2, name: '모양 지우개', price: 200, icon: '🧼' },
+      { id: 3, name: '노란 연필', price: 300, icon: '✏️' },
+      { id: 4, name: '미니 요구르트', price: 400, icon: '🧃' },
+      { id: 5, name: '달콤 바나나', price: 500, icon: '🍌' },
+      { id: 6, name: '바삭 초코쿠키', price: 600, icon: '🍪' },
+      { id: 7, name: '고소한 우유', price: 700, icon: '🥛' },
+      { id: 8, name: '빨간 사과', price: 800, icon: '🍎' },
+      { id: 9, name: '새콤 딸기주스', price: 900, icon: '🍓' }
+    ];
+
+    let currentItem = products[0];
+    let insertedCoins = [];
+    let isFrontFace = false; // 기본은 교육용 숫자면(뒷면)
+
+    // 동전 앞면/뒷면 토글 함수
+    function setCoinFace(front) {
+      isFrontFace = front;
+      document.getElementById('btnBackFace').classList.toggle('active', !front);
+      document.getElementById('btnFrontFace').classList.toggle('active', front);
+
+      const c500 = document.getElementById('coin500Element');
+      const c100 = document.getElementById('coin100Element');
+      c500.classList.toggle('front-face', front);
+      c100.classList.toggle('front-face', front);
+      updateBoard();
+    }
+
+    // 오디오 컨텍스트 (실제 백동 동전의 맑은 찰랑거림 합성)
+    let audioCtx = null;
+    function playCoinSound(val) {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        // 500원은 묵직한 1450Hz, 100원은 맑고 청아한 1850Hz
+        const baseFreq = val === 500 ? 1450 : 1850;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.45, audioCtx.currentTime + 0.07);
+
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } catch (e) {}
+    }
+
+    function playCelebrationSound() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // 도, 미, 솔, 높은 도
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.35);
+          }, idx * 110);
+        });
+      } catch (e) {}
+    }
+
+    // TTS 음성 안내
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // 상품 목록 렌더링
+    function renderItems() {
+      const container = document.getElementById('itemsGrid');
+      container.innerHTML = products.map(item => `
+        <div class="item-card ${item.id === currentItem.id ? 'selected' : ''}" onclick="selectItem(${item.id})">
+          <div class="item-icon">${item.icon}</div>
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">${item.price.toLocaleString()}원</div>
+        </div>
+      `).join('');
+    }
+
+    // 상품 선택
+    function selectItem(id) {
+      currentItem = products.find(p => p.id === id);
+      renderItems();
+      resetPayment(false);
+      speak(`${currentItem.name}, 가격은 ${currentItem.price}원 입니다.`);
+      updateBoard();
+    }
+
+    // 동전 넣기
+    function insertCoin(value) {
+      insertedCoins.push(value);
+      playCoinSound(value);
+      updateBoard();
+
+      const currentSum = insertedCoins.reduce((a, b) => a + b, 0);
+      if (currentSum === currentItem.price) {
+        playCelebrationSound();
+        speak(`정답입니다! ${currentItem.price}원을 딱 맞게 냈어요. 물건을 구매했습니다!`);
+      } else if (currentSum > currentItem.price) {
+        speak(`금액을 초과했어요! 거스름돈은 ${currentSum - currentItem.price}원 입니다.`);
+      }
+    }
+
+    // 특정 동전 빼기 (취소)
+    function removeCoin(index) {
+      insertedCoins.splice(index, 1);
+      playCoinSound(100);
+      updateBoard();
+    }
+
+    // 계산대 업데이트
+    function updateBoard() {
+      const target = currentItem.price;
+      const paid = insertedCoins.reduce((a, b) => a + b, 0);
+      const remain = target - paid;
+
+      document.getElementById('selectedItemName').textContent = currentItem.name;
+      document.getElementById('targetPrice').textContent = `${target.toLocaleString()}원`;
+      document.getElementById('paidPrice').textContent = `${paid.toLocaleString()}원`;
+
+      const remainElem = document.getElementById('remainPrice');
+      if (remain > 0) {
+        remainElem.textContent = `${remain.toLocaleString()}원 남음`;
+        remainElem.style.color = '#dc2626';
+      } else if (remain === 0) {
+        remainElem.textContent = '계산 완료! (0원)';
+        remainElem.style.color = '#059669';
+      } else {
+        remainElem.textContent = `거스름돈: ${Math.abs(remain).toLocaleString()}원`;
+        remainElem.style.color = '#2563eb';
+      }
+
+      // 동전 트레이 렌더링
+      const tray = document.getElementById('coinsTray');
+      if (insertedCoins.length === 0) {
+        tray.innerHTML = '<span style="color: #94a3b8; font-size: 0.9rem;">동전을 클릭하면 여기에 담깁니다.</span>';
+      } else {
+        tray.innerHTML = insertedCoins.map((coinVal, idx) => `
+          <div class="coin-graphic coin-${coinVal} ${isFrontFace ? 'front-face' : ''} mini-coin" onclick="removeCoin(${idx})" title="${coinVal}원 취소"></div>
+        `).join('');
+      }
+
+      // 성공 배너
+      const banner = document.getElementById('successBanner');
+      banner.style.display = (remain === 0 && paid > 0) ? 'block' : 'none';
+    }
+
+    // 초기화
+    function resetPayment(shouldSpeak = true) {
+      insertedCoins = [];
+      updateBoard();
+      if (shouldSpeak) {
+        speak('동전을 다시 처음부터 넣을 수 있어요.');
+      }
+    }
+
+    // 상태 음성 안내
+    function speakStatus() {
+      const target = currentItem.price;
+      const paid = insertedCoins.reduce((a, b) => a + b, 0);
+      const remain = target - paid;
+
+      if (remain > 0) {
+        speak(`${currentItem.name} 가격은 ${target}원이며, 현재 ${paid}원을 넣었습니다. ${remain}원이 더 필요해요.`);
+      } else if (remain === 0) {
+        speak(`딱 맞게 ${paid}원을 넣었습니다. 물건을 구매할 수 있어요!`);
+      } else {
+        speak(`금액을 초과했습니다. 거스름돈으로 ${Math.abs(remain)}원을 돌려받습니다.`);
+      }
+    }
+
+    // 초기 실행
+    window.addEventListener('DOMContentLoaded', () => {
+      renderItems();
+      updateBoard();
+    });
+  </script>
+</body>
+</html>

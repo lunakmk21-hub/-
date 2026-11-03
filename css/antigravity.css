@@ -1,0 +1,68 @@
+/* 고해상도 동전 그래픽 백그라운드 매핑 */
+.coin-graphic {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
+  will-change: transform;
+}
+
+.coin-100 {
+  width: 80px;
+  height: 80px;
+  background-image: url('../assets/images/coins/coin_100.svg');
+}
+
+.coin-500 {
+  width: 120px;
+  height: 120px;
+  background-image: url('../assets/images/coins/coin_500.svg');
+}
+
+/* 동전 앞면 (초상/학) 클래스 */
+.coin-100.front-face {
+  background-image: url('../assets/images/coins/coin_100_front.svg');
+}
+
+.coin-500.front-face {
+  background-image: url('../assets/images/coins/coin_500_front.svg');
+}
+
+/* 반중력 부유 모션 정의 (css/antigravity.css) */
+@keyframes floating-space {
+  0%   { transform: translate(0, 0px) rotate(0deg); }
+  50%  { transform: translate(8px, -12px) rotate(4deg); }
+  100% { transform: translate(0, 0px) rotate(0deg); }
+}
+
+.antigravity-float {
+  animation: floating-space 4s ease-in-out infinite;
+}
+
+/* 자연스러운 반중력 부유 변형 (지연 및 속도 분산) */
+.antigravity-float-delay-1 {
+  animation: floating-space 4.8s ease-in-out -1.5s infinite;
+}
+
+.antigravity-float-delay-2 {
+  animation: floating-space 3.6s ease-in-out -2.2s infinite;
+}
+
+/* 동전 인터랙션 & 호버 효과 */
+.coin-interactive {
+  cursor: grab;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+  user-select: none;
+  display: inline-block;
+}
+
+.coin-interactive:hover {
+  transform: scale(1.1) translateY(-6px);
+  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.35)) brightness(1.08);
+}
+
+.coin-interactive:active {
+  cursor: grabbing;
+  transform: scale(0.94);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+}
